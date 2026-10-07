@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache">
 <title>Romeinse Muntenregen</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Nunito:wght@600;800&display=swap">
@@ -425,7 +426,24 @@ function gameOver(){
   $('overScreen').hidden=false;$('againBtn').focus();
   tone(220,0.6,'triangle',0.15,0.5);
 }
-$('startBtn').onclick=start;$('againBtn').onclick=start;
+// auto-update: compare with version.json next to the page and reload into the new build
+const APP_VERSION='20261007174220';
+let pendingUpdate=null;
+function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
+async function checkUpdate(){
+  try{
+    const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)return;
+    const v=String((await r.json()).version||'');
+    if(v&&v!==APP_VERSION&&new URLSearchParams(location.search).get('v')!==v){pendingUpdate=v;if(!running&&!$('startScreen').hidden)applyUpdate();}
+  }catch(e){}
+}
+if(location.protocol.startsWith('http')){
+  checkUpdate();setInterval(checkUpdate,60000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate();});
+}
+$('startBtn').onclick=()=>{if(pendingUpdate)return applyUpdate();start();};
+$('againBtn').onclick=()=>{if(pendingUpdate)return applyUpdate();start();};
 
 addEventListener('keydown',e=>{keys[e.key]=true;const tag=document.activeElement&&document.activeElement.tagName;if((e.key===' '||e.key==='Enter')&&!running&&tag!=='BUTTON'&&tag!=='INPUT')start();});
 addEventListener('keyup',e=>keys[e.key]=false);
