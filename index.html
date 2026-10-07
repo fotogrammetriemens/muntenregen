@@ -31,11 +31,18 @@ body{margin:0;background:var(--pompeii-dk);color:var(--marble);font-family:var(-
 @keyframes lost{0%,100%{transform:none}20%{transform:translateX(-4px) rotate(-12deg)}40%{transform:translateX(4px) rotate(10deg)}60%{transform:translateX(-3px) rotate(-6deg)}80%{transform:translateX(2px)}}
 @media (prefers-reduced-motion:reduce){.lives img.lost{animation:none}}
 .combo{position:fixed;left:50%;top:22%;transform:translateX(-50%);font-family:var(--display);font-weight:800;font-size:2rem;color:var(--gold);text-shadow:0 3px 0 var(--ink);pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap}
-.overlay{position:fixed;inset:0;display:grid;place-items:center;padding-inline:16px;background:color-mix(in srgb,var(--ink) 55%,transparent)}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 70px);box-sizing:border-box;background:color-mix(in srgb,var(--ink) 55%,transparent)}
 .card{max-width:27rem;width:100%;background:var(--marble);color:var(--ink);border-radius:6px;padding:28px 24px;text-align:center;box-shadow:0 0 0 6px var(--marble),0 0 0 8px var(--pompeii),0 14px 30px rgba(0,0,0,.5);display:grid;gap:14px}
 .card h1{font-family:var(--display);font-weight:800;font-size:clamp(1.8rem,7vw,2.5rem);line-height:1.05;margin:0;text-wrap:balance;color:var(--pompeii);letter-spacing:.04em}
 .card .latin{font-family:var(--display);letter-spacing:.2em;font-size:.8rem;color:var(--pompeii)}
 .card p{margin:0;line-height:1.5}
+.overlay .card{margin-block:auto;flex:none}
+.who{text-align:left;border-top:1px solid color-mix(in srgb,var(--pompeii) 30%,transparent);padding-top:10px}
+.who summary{cursor:pointer;font-family:var(--display);font-weight:800;letter-spacing:.1em;color:var(--pompeii);font-size:.9rem;list-style:none;text-align:center}
+.who summary::-webkit-details-marker{display:none}
+.who summary::after{content:' ▾'}
+.who[open] summary::after{content:' ▴'}
+.who .legend{margin-top:10px}
 .legend{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;text-align:left;font-size:.95rem;align-items:center}
 .coin{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
 .coin.ag{background:var(--silver)} .coin.au{background:var(--gold)}
@@ -132,7 +139,11 @@ button.ghost{background:transparent;color:var(--pompeii);box-shadow:inset 0 0 0 
   <div class="card">
     <div class="latin">AVE · CAESAR</div>
     <h1>Romeinse Muntenregen</h1>
-    <p>Het regent Romeins geld. Schuif de buste heen en weer en vang zoveel mogelijk munten. Ontwijk de speren, want drie treffers en het feest is voorbij.</p>
+    <p>Vang de Romeinse munten, ontwijk alles wat naar je gegooid wordt en versla na 2½ minuut de eindbaas.</p>
+    <button id="startBtn">Spelen</button>
+    <p class="hint">Pijltjes / A-D, of sleep met muis of vinger</p>
+    <div class="board"><div class="board-h">TOP III</div><ol class="top3"></ol><p class="board-msg" hidden></p></div>
+    <details class="who"><summary>Wie kom je tegen?</summary>
     <div class="legend">
       <span class="coin ag"></span><span><b>Denarius</b> (zilver): 1 punt</span>
       <span class="coin au"></span><span><b>Aureus</b> (goud): 5 punten</span>
@@ -146,9 +157,7 @@ button.ghost{background:transparent;color:var(--pompeii);box-shadow:inset 0 0 0 
       <img class="lifeicon" id="iconRene" src="" alt=""><span><b>Eindbaas Rene</b>: houd 2½ minuut vol, dan schiet je je munten op hem af!</span>
       <span class="laser"></span><span><b>Laserblik</b>: soms komt er iemand kijken. Gloeien haar ogen rood, ga dan snel opzij!</span>
     </div>
-    <div class="board"><div class="board-h">TOP III</div><ol class="top3"></ol><p class="board-msg" hidden></p></div>
-    <button id="startBtn">Spelen</button>
-    <p class="hint">Pijltjes / A-D, of sleep met muis of vinger</p>
+    </details>
   </div>
 </div>
 <div class="intro" id="intro" hidden>
@@ -854,7 +863,7 @@ function endScreen(won){
   $('overScreen').hidden=false;$('againBtn').focus();
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007195347';
+const APP_VERSION='20261007195446';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
