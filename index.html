@@ -450,6 +450,16 @@ whisMesh.visible=false;scene.add(whisMesh);
 const noteTex=['♪','♫'].map(ch=>canvasTex(64,64,(g)=>{g.font='bold 50px serif';g.textAlign='center';g.textBaseline='middle';g.lineWidth=5;g.strokeStyle='#22110c';g.strokeText(ch,32,34);g.fillStyle='#ffe9a8';g.fillText(ch,32,34);}));
 const notes=[];let whistler=null,wobT=0;
 const MELODY=[72,76,79,84,83,79,76,74,72,74,76,72,67,71,74,72];
+function whistleNote(f,d){
+  try{
+    const c=getCtx(),t=c.currentTime,o=c.createOscillator(),g=c.createGain(),l=c.createOscillator(),lg=c.createGain();
+    o.type='sine';o.frequency.setValueAtTime(f*0.94,t);o.frequency.exponentialRampToValueAtTime(f,t+0.05);
+    l.frequency.value=6.5;lg.gain.value=f*0.018;l.connect(lg).connect(o.frequency);
+    g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.16,t+0.03);g.gain.setValueAtTime(0.16,t+d*0.7);g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g).connect(c.destination);o.start(t);l.start(t);o.stop(t+d+0.02);l.stop(t+d+0.02);
+    if(glassNoise){const s=c.createBufferSource(),bp=c.createBiquadFilter(),ng=c.createGain();s.buffer=glassNoise;bp.type='bandpass';bp.frequency.value=f*2;bp.Q.value=4;ng.gain.value=0.05;s.connect(bp).connect(ng).connect(c.destination);s.start(t);}
+  }catch(e){}
+}
 function startWhistle(){whistler={phase:'in',t:0,n:0,x:(Math.random()-.5)*BOUND*0.8};whisMesh.visible=true;showCombo('♪ Fluiten! ♪');}
 function hideWhistler(){whisMesh.visible=false;whistler=null;}
 function clearNotes(){notes.splice(0).forEach(n=>scene.remove(n.obj));}
@@ -461,7 +471,7 @@ function updateWhistler(dt){
     whisMesh.position.set(w.x+Math.sin(w.n*0.7)*0.5,rest,-1.2);whisMesh.rotation.z=Math.sin(w.t*12)*0.06;
     wobT=Math.max(wobT,0.7);
     if(w.t>0.34){w.t=0;const m=MELODY[w.n%MELODY.length];const f=440*Math.pow(2,(m-69)/12);
-      tone(f,0.3,'sine',0.07,1.01);tone(f*2,0.2,'sine',0.015,1.0);
+      whistleNote(f,0.32);tone(1800,0.04,'sine',0.05,0.5);
       const s=new THREE.Sprite(new THREE.SpriteMaterial({map:noteTex[w.n%2],transparent:true,depthWrite:false}));
       s.scale.set(0.7,0.7,1);s.position.set(whisMesh.position.x,rest-0.6,-0.5);scene.add(s);
       notes.push({obj:s,x0:s.position.x+(Math.random()-.5)*1.5,age:0,ph:Math.random()*6});
@@ -576,7 +586,7 @@ const MEET={
   gwain:{name:'GWAIN',img:'imgGwain',lines:['Ik ben helemaal klaar met het hout!']},
   glass:{img:'imgGlass',lines:['Zo creëer je werk!']},
   pot:{img:'imgPot',lines:['Potverdorie!']},
-  whistle:{img:'imgWhis',lines:['♪ Fiuuu... fiu-fiu-fiuuuu ♫']},
+  whistle:{name:'JAN',img:'imgWhis',lines:['♪ Fiuuu... fiu-fiu-fiuuuu ♫']},
   rene:{name:'RENE',img:'imgRene',lines:['Ik ben van ijzer.','Mij krijg je nooit!']}
 };
 function snapRest(kind){
@@ -886,7 +896,7 @@ function endScreen(won){
   $('overScreen').hidden=false;$('againBtn').focus();
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007200512';
+const APP_VERSION='20261007200615';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
