@@ -74,6 +74,12 @@ body{margin:0;background:var(--pompeii-dk);color:var(--marble);font-family:var(-
 .skip{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:16px;font-size:.85rem;padding:8px 14px;background:color-mix(in srgb,var(--ink) 70%,transparent);color:var(--marble);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--gold) 60%,transparent)}
 .skip:active{transform:none;box-shadow:inset 0 0 0 2px var(--gold)}
 @media (prefers-reduced-motion:reduce){.ton,.gbnext{animation:none}}
+.saylayer{position:fixed;inset:0;z-index:20;cursor:pointer}
+.saybubble{position:absolute;box-sizing:border-box;background:#fffaf0;color:var(--ink);border:3px solid var(--ink);border-radius:24px;box-shadow:0 10px 24px rgba(0,0,0,.45);padding:22px 18px 22px;font-family:var(--body);font-weight:800;font-size:clamp(1rem,4.2vw,1.25rem);line-height:1.45;min-height:4.6em}
+.saybubble::before,.saybubble::after{content:'';position:absolute;border-style:solid;border-color:transparent}
+.saybubble::before{top:-26px;left:calc(var(--tail,50%) - 12px);border-width:0 12px 26px 12px;border-bottom-color:var(--ink)}
+.saybubble::after{top:-20px;left:calc(var(--tail,50%) - 8px);border-width:0 8px 20px 8px;border-bottom-color:#fffaf0}
+.saybubble .gbname{top:auto;bottom:-16px;left:14px}
 .spk{flex:none;height:min(32vh,260px,48vw);width:auto;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
 .spk.talk{animation:talk .28s ease-in-out infinite}
 @keyframes talk{50%{transform:rotate(-3deg) translateY(-4px)}}
@@ -160,6 +166,7 @@ button.ghost{background:transparent;color:var(--pompeii);box-shadow:inset 0 0 0 
     </details>
   </div>
 </div>
+<div class="saylayer" id="sayLayer" hidden><div class="saybubble" id="sayBubble"><span class="gbname" id="sayName" hidden></span><p class="gbtext" id="sayText"></p><span class="gbnext" id="sayNext" hidden>▼</span></div></div>
 <div class="intro" id="intro" hidden>
   <div class="gbbox"><span class="gbname" id="gbName">TON</span><p class="gbtext" id="gbText"></p><span class="gbnext" id="gbNext" hidden>▼</span></div>
   <div class="intro-stage">
@@ -502,6 +509,7 @@ function updateBoss(dt){
   else if(b.phase==='fight'){
     b.ph+=dt*(1.6+(BOSS_HP-b.hp)*0.07);b.x=Math.sin(b.ph)*BOUND*0.85;
     reneMesh.position.set(b.x,rest+Math.sin(b.ph*2.3)*0.25,-1.2);reneMesh.rotation.z=-Math.cos(b.ph)*0.15;
+    b.lifeT=(b.lifeT??14)-dt;if(b.lifeT<=0){b.lifeT=16+Math.random()*6;if(lives<3){spawnLife();showCombo('Ton gooit je een leven toe!');}}
     b.throwT-=dt;if(b.throwT<=0){b.throwT=1.3+Math.random()*0.6;launch('key',{x:b.x,y:rest-0.8});}
     fireT-=dt;
     if(fireT<=0&&ammo>0){fireT=0.38;fire();}
@@ -571,11 +579,26 @@ const MEET={
   whistle:{img:'imgWhis',lines:['♪ Fiuuu... fiu-fiu-fiuuuu ♫']},
   rene:{name:'RENE',img:'imgRene',lines:['Ik ben van ijzer.','Mij krijg je nooit!']}
 };
+function snapRest(kind){
+  if(kind==='laser'){watcher.t=0.8;herMesh.position.set(watcher.x,herY,-1.5);return herMesh;}
+  if(kind==='whistle'){whistler.t=0.7;whisMesh.position.set(whistler.x,herY+0.1,-1.2);return whisMesh;}
+  if(kind==='rene'){boss.t=0.6;reneMesh.position.set(boss.x,herY+0.1,-1.2);return reneMesh;}
+  thrower.t=0.7;thrMesh.position.set(thrower.x,herY+0.2,-1.2);return thrMesh;
+}
+let talkMesh=null;
 function meet(kind,cb){
-  if(met[kind])return cb();
+  cb();
+  if(met[kind])return;
   met[kind]=true;paused=true;keys={};
-  const m=MEET[kind];
-  openDialog({name:m.name,img:imgURL(m.img),lines:m.lines},()=>{paused=false;cb();});
+  const m=MEET[kind],mesh=snapRest(kind);mesh.updateMatrixWorld();
+  const box=new THREE.Box3().setFromObject(mesh),v=new THREE.Vector3(mesh.position.x,box.min.y,mesh.position.z).project(camera);
+  const sx=(v.x+1)/2*innerWidth,sy=(1-v.y)/2*innerHeight;
+  const bub=$('sayBubble'),w=Math.min(innerWidth-24,320);
+  const left=Math.max(12,Math.min(innerWidth-w-12,sx-w/2));
+  bub.style.width=w+'px';bub.style.left=left+'px';bub.style.top=Math.min(sy+20,innerHeight-160)+'px';
+  bub.style.setProperty('--tail',Math.max(24,Math.min(w-24,sx-left))+'px');
+  talkMesh=mesh;
+  openDialog({name:m.name,lines:m.lines,say:true},()=>{talkMesh=null;mesh.rotation.z=0;paused=false;});
 }
 function victory(){
   hideBoss();running=false;score+=100;setScore();
@@ -606,6 +629,14 @@ let lastShroom=-99,tripT=0,camLookY=3.4;
 const lifeMat=new THREE.MeshBasicMaterial({map:loadTex('imgLife'),transparent:true,alphaTest:0.05});
 const lifeGeo=new THREE.PlaneGeometry(0.95*146/200,0.95);
 let lastLife=-99;
+function spawnLife(){
+  lastLife=elapsed;
+  const obj=new THREE.Mesh(lifeGeo,lifeMat);
+  const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:goldGlowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+  halo.scale.set(1.6,1.6,1);halo.position.z=-0.05;obj.add(halo);
+  obj.position.set((Math.random()*2-1)*BOUND,11,0);scene.add(obj);
+  items.push({obj,type:'life',vy:2.4,spin:0,wob:Math.random()*6});
+}
 function spawn(){
   if(elapsed>15&&elapsed-lastShroom>22&&tripT<=0&&Math.random()<0.07){
     lastShroom=elapsed;
@@ -613,15 +644,7 @@ function spawn(){
     items.push({obj,type:'shroom',vy:4.6+level*0.35,spin:1.5,wob:Math.random()*6});
     return;
   }
-  if(lives<3&&elapsed-lastLife>40&&Math.random()<0.04){
-    lastLife=elapsed;
-    const obj=new THREE.Mesh(lifeGeo,lifeMat);
-    const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:goldGlowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
-    halo.scale.set(1.6,1.6,1);halo.position.z=-0.05;obj.add(halo);
-    obj.position.set((Math.random()*2-1)*BOUND,11,0);scene.add(obj);
-    items.push({obj,type:'life',vy:2.4,spin:0,wob:Math.random()*6});
-    return;
-  }
+  if(lives<3&&elapsed-lastLife>16&&Math.random()<0.12){spawnLife();return;}
   const r=Math.random();
   const danger=Math.min(0.2+Math.min(level,9)*0.03,0.4);
   let type,obj;
@@ -863,7 +886,7 @@ function endScreen(won){
   $('overScreen').hidden=false;$('againBtn').focus();
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007195446';
+const APP_VERSION='20261007200256';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
@@ -885,24 +908,30 @@ $('tonTop').src=$('tonJaw').src=LIFE_IMG;$('rasImg').src='data:image/webp;base64
 
 function blip(){tone(900+Math.random()*250,0.035,'square',0.035,1);}
 let dlg=null;
-function openDialog({name,img,lines,mouth},done){
-  dlg={lines,done,mouth:!!mouth};introPage=0;
+function openDialog({name,img,lines,mouth,say},done){
+  dlg={lines,done,mouth:!!mouth,say:!!say};introPage=0;
+  if(say){
+    $('sayName').textContent=name||'';$('sayName').hidden=!name;
+    $('sayLayer').hidden=false;setTimeout(typePage,250);return;
+  }
   $('gbName').textContent=name||'';$('gbName').hidden=!name;
   $('ton').hidden=!mouth;$('spkImg').hidden=!!mouth;if(img)$('spkImg').src=img;
   $('intro').hidden=false;bust.visible=false;
   setTimeout(typePage,300);
 }
 function closeDialog(){
-  typing=false;clearTimeout(typeTimer);$('intro').hidden=true;bust.visible=true;$('spkImg').classList.remove('talk');
+  typing=false;clearTimeout(typeTimer);
+  if(dlg&&dlg.say){$('sayLayer').hidden=true;}else{$('intro').hidden=true;bust.visible=true;$('spkImg').classList.remove('talk');}
   const d=dlg&&dlg.done;dlg=null;if(d)d();
 }
 function typePage(){
   const txt=dlg.lines[introPage];let i=0;
-  $('gbText').textContent='';$('gbNext').hidden=true;typing=true;clearTimeout(typeTimer);
+  const tEl=$(dlg.say?'sayText':'gbText'),nEl=$(dlg.say?'sayNext':'gbNext');
+  tEl.textContent='';nEl.hidden=true;typing=true;clearTimeout(typeTimer);
   (function next(){
     if(!typing)return;
-    if(i>=txt.length){typing=false;$('ton').classList.remove('open');$('spkImg').classList.remove('talk');$('gbNext').hidden=false;return;}
-    const ch=txt[i++];$('gbText').textContent=txt.slice(0,i);
+    if(i>=txt.length){typing=false;$('ton').classList.remove('open');$('spkImg').classList.remove('talk');nEl.hidden=false;return;}
+    const ch=txt[i++];tEl.textContent=txt.slice(0,i);
     if(/[a-zë♪♫]/i.test(ch)){blip();$('ton').classList.toggle('open',/[aeiouyë]/i.test(ch));$('spkImg').classList.add('talk');}
     else $('ton').classList.remove('open');
     typeTimer=setTimeout(next,/[.!?,]/.test(ch)?260:55);
@@ -910,7 +939,7 @@ function typePage(){
 }
 function advanceIntro(){
   if(!dlg)return;
-  if(typing){typing=false;clearTimeout(typeTimer);$('gbText').textContent=dlg.lines[introPage];$('ton').classList.remove('open');$('spkImg').classList.remove('talk');$('gbNext').hidden=false;return;}
+  if(typing){typing=false;clearTimeout(typeTimer);$(dlg.say?'sayText':'gbText').textContent=dlg.lines[introPage];$('ton').classList.remove('open');$('spkImg').classList.remove('talk');$(dlg.say?'sayNext':'gbNext').hidden=false;return;}
   introPage++;
   if(introPage<dlg.lines.length)typePage();else closeDialog();
 }
@@ -920,12 +949,13 @@ function showIntro(){
   if(musicWanted)Music.start('dream');
   openDialog({name:'TON',lines:INTRO,mouth:true},()=>start());
 }
+$('sayLayer').addEventListener('click',()=>advanceIntro());
 $('intro').addEventListener('click',e=>{if(e.target.closest('#skipIntro'))return;advanceIntro();});
 $('skipIntro').addEventListener('click',e=>{e.stopPropagation();closeDialog();});
 $('startBtn').onclick=()=>{if(pendingUpdate)return applyUpdate();if(!introSeen)showIntro();else start();};
 $('againBtn').onclick=()=>{if(pendingUpdate)return applyUpdate();start();};
 
-addEventListener('keydown',e=>{keys[e.key]=true;if(!$('intro').hidden){if(e.key===' '||e.key==='Enter'){e.preventDefault();advanceIntro();}return;}const tag=document.activeElement&&document.activeElement.tagName;if((e.key===' '||e.key==='Enter')&&!running&&tag!=='BUTTON'&&tag!=='INPUT')start();});
+addEventListener('keydown',e=>{keys[e.key]=true;if(!$('intro').hidden||!$('sayLayer').hidden){if(e.key===' '||e.key==='Enter'){e.preventDefault();advanceIntro();}return;}const tag=document.activeElement&&document.activeElement.tagName;if((e.key===' '||e.key==='Enter')&&!running&&tag!=='BUTTON'&&tag!=='INPUT')start();});
 addEventListener('keyup',e=>keys[e.key]=false);
 function pointer(e){
   if(!running)return;
@@ -1029,6 +1059,7 @@ function loop(){
     camera.position.x=Math.sin(t*4.3)*0.35*k;camera.lookAt(0,camLookY+Math.sin(t*3.1)*0.15*k,0);camera.rotateZ(Math.sin(t*5.7)*0.07*k);
     if(wobT<=0){camera.position.x=0;camera.lookAt(0,camLookY,0);}
   }
+  if(talkMesh)talkMesh.rotation.z=typing?Math.sin(t*22)*0.06:0;
   updateConfetti(dt,t);
   squash=Math.max(0,squash-dt*4);
   const s=Math.sin(squash*Math.PI);
