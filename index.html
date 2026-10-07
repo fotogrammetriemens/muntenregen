@@ -25,7 +25,7 @@ body{margin:0;background:var(--pompeii-dk);color:var(--marble);font-family:var(-
 .sub{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;opacity:.8}
 .lives{font-family:var(--display);font-weight:800;font-size:1.5rem;letter-spacing:.15em;color:var(--marble);text-shadow:0 2px 0 var(--ink);text-align:right}
 .lives{display:flex;gap:6px;justify-content:flex-end}
-.lives img{height:clamp(64px,16vw,88px);width:auto;filter:drop-shadow(0 2px 0 var(--ink));transition:filter .3s,opacity .3s}
+.lives img{height:clamp(50px,12.5vw,68px);width:auto;filter:drop-shadow(0 2px 0 var(--ink));transition:filter .3s,opacity .3s}
 .lives img.gone{filter:grayscale(1) drop-shadow(0 2px 0 var(--ink));opacity:.3}
 .lives img.lost{animation:lost .5s}
 @keyframes lost{0%,100%{transform:none}20%{transform:translateX(-4px) rotate(-12deg)}40%{transform:translateX(4px) rotate(10deg)}60%{transform:translateX(-3px) rotate(-6deg)}80%{transform:translateX(2px)}}
@@ -427,7 +427,7 @@ function gameOver(){
   tone(220,0.6,'triangle',0.15,0.5);
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007174220';
+const APP_VERSION='20261007174635';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
