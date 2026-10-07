@@ -1,9 +1,10 @@
 // Romeinse Muntenregen: gedeelde ranglijst in Google Sheets.
-// Plakken in: Extensies -> Apps Script. Implementeren als web-app, toegang: Iedereen.
+// Plakken in een nieuw project op script.new. Implementeren als web-app, toegang: Iedereen.
+const SPREADSHEET_ID = '1lo2XvyUwAj6oH1k-ChPOuHCjQWfewxm0mPQsD610LHs';
 const SHEET_NAME = 'Scores';
 
 function sheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) {
     sh = ss.insertSheet(SHEET_NAME);
