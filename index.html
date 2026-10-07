@@ -39,6 +39,13 @@ body{margin:0;background:var(--pompeii-dk);color:var(--marble);font-family:var(-
 .legend{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;text-align:left;font-size:.95rem;align-items:center}
 .coin{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
 .coin.ag{background:var(--silver)} .coin.au{background:var(--gold)}
+.levelup{position:fixed;left:0;right:0;top:34%;text-align:center;pointer-events:none;opacity:0}
+.levelup .lv{font-family:var(--display);font-weight:800;font-size:clamp(2.6rem,11vw,5rem);letter-spacing:.08em;color:var(--gold);text-shadow:0 4px 0 var(--ink),0 0 24px rgba(224,176,74,.6)}
+.levelup .lv-sub{font-family:var(--display);font-weight:800;font-size:clamp(1.1rem,4.5vw,1.6rem);letter-spacing:.2em;color:var(--marble);text-shadow:0 2px 0 var(--ink)}
+.levelup.show{animation:levelup 2.2s ease-out}
+@keyframes levelup{0%{opacity:0;transform:scale(.6)}12%{opacity:1;transform:scale(1.12)}22%{transform:scale(1)}75%{opacity:1}100%{opacity:0;transform:translateY(-30px)}}
+@media (prefers-reduced-motion:reduce){.levelup.show{animation:none;opacity:1}}
+.lvl{font-family:var(--display);font-weight:800;font-size:.85rem;letter-spacing:.12em;color:var(--gold)}
 .mini{list-style:none;margin:8px 0 0;padding:6px 8px;display:grid;gap:2px;border-radius:4px;background:color-mix(in srgb,var(--ink) 55%,transparent);max-width:46vw;font-size:.8rem}
 .mini li{display:grid;grid-template-columns:1.6rem 1fr auto;gap:6px;align-items:baseline}
 .mini .rk{font-family:var(--display);font-weight:800;color:var(--gold)}
@@ -78,10 +85,11 @@ button.ghost{background:transparent;color:var(--pompeii);box-shadow:inset 0 0 0 
 
 <canvas id="c"></canvas>
 <div class="hud">
-  <div><div class="score" id="score">0</div><div class="roman" id="roman"></div><div class="sub">Record <span id="best">0</span></div><ol class="mini" id="miniTop" hidden></ol></div>
+  <div><div class="score" id="score">0</div><div class="roman" id="roman"></div><div class="sub">Record <span id="best">0</span></div><div class="lvl" id="lvl">LEVEL I</div><ol class="mini" id="miniTop" hidden></ol></div>
   <div><div class="lives" id="lives" aria-label="levens"></div><div class="sub" style="text-align:right">Levens</div></div>
 </div>
 <div class="combo" id="combo"></div>
+<div class="levelup" id="levelUp" aria-live="polite"><div class="lv" id="levelUpText">LEVEL II</div><div class="lv-sub">Sneller!</div></div>
 <div class="flash" id="flash"></div>
 <button class="music" id="musicBtn" aria-pressed="true">♪ Muziek aan</button>
 
@@ -95,7 +103,7 @@ button.ghost{background:transparent;color:var(--pompeii);box-shadow:inset 0 0 0 
       <span class="coin au"></span><span><b>Aureus</b> (goud): 5 punten</span>
       <span class="pilum"></span><span><b>Pilum</b> (speer): kost een leven</span>
       <img class="lifeicon" src="" alt=""><span><b>Extra leven</b> (zeldzaam): vang zijn hoofdje als je een leven kwijt bent</span>
-      <span class="shroom"></span><span><b>Paddenstoel</b> (zeldzaam): links wordt rechts en alles gaat draaien</span>
+      <span class="shroom"></span><span><b>Paddenstoel</b> valt snel: links wordt rechts en alles gaat draaien</span>
       <span class="laser"></span><span><b>Laserblik</b>: soms komt er iemand kijken. Gloeien haar ogen rood, ga dan snel opzij!</span>
     </div>
     <div class="board"><div class="board-h">TOP III</div><ol class="top3"></ol><p class="board-msg" hidden></p></div>
@@ -295,10 +303,10 @@ const lifeMat=new THREE.MeshBasicMaterial({map:loadTex('imgLife'),transparent:tr
 const lifeGeo=new THREE.PlaneGeometry(0.95*146/200,0.95);
 let lastLife=-99;
 function spawn(){
-  if(elapsed>20&&elapsed-lastShroom>45&&tripT<=0&&Math.random()<0.035){
+  if(elapsed>15&&elapsed-lastShroom>22&&tripT<=0&&Math.random()<0.07){
     lastShroom=elapsed;
     const obj=makeMushroom();obj.position.set((Math.random()*2-1)*BOUND,11,0);scene.add(obj);
-    items.push({obj,type:'shroom',vy:2.6,spin:1.5,wob:Math.random()*6});
+    items.push({obj,type:'shroom',vy:4.6+level*0.35,spin:1.5,wob:Math.random()*6});
     return;
   }
   if(lives<3&&elapsed-lastLife>40&&Math.random()<0.04){
@@ -502,11 +510,16 @@ function drawLives(){
 function setScore(){ $('score').textContent=score; $('roman').textContent=toRoman(score); }
 function showCombo(t){const c=$('combo');c.textContent=t;c.style.opacity=1;clearTimeout(showCombo.t);showCombo.t=setTimeout(()=>c.style.opacity=0,700);}
 
+function levelUp(){
+  const r=toRoman(level+1);$('lvl').textContent='LEVEL '+r;$('levelUpText').textContent='LEVEL '+r;
+  const el=$('levelUp');el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
+  [523,659,784,1047].forEach((f,k)=>setTimeout(()=>tone(f,0.16,'square',0.07),k*95));
+}
 function start(){
   items.splice(0).forEach(i=>scene.remove(i.obj));
   score=0;lives=3;level=0;combo=0;spawnT=0;elapsed=0;hurtT=0;hideWatcher();nextWatcher=30;tripT=0;lastShroom=-99;lastLife=-99;canvas.style.filter='';camera.position.x=0;camera.lookAt(0,camLookY,0);
   bust.position.x=0;targetX=0;bust.rotation.set(0,0,0);setView('front');
-  setScore();drawLives();
+  setScore();drawLives();$('lvl').textContent='LEVEL I';
   $('startScreen').hidden=true;$('overScreen').hidden=true;
   running=true;tone(660,0.15);
   if(musicWanted)Music.start();
@@ -522,7 +535,7 @@ function gameOver(){
   tone(220,0.6,'triangle',0.15,0.5);
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007191141';
+const APP_VERSION='20261007191759';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
@@ -572,7 +585,9 @@ function loop(){
   const dt=Math.min(clock.getDelta(),0.05),t=clock.elapsedTime;
   let vx=0;
   if(running){
-    elapsed+=dt;level=Math.floor(elapsed/12);
+    elapsed+=dt;
+    const nl=Math.floor(elapsed/12);
+    if(nl>level){level=nl;levelUp();}
     const kx=((keys.ArrowLeft||keys.a||keys.A?-1:0)+(keys.ArrowRight||keys.d||keys.D?1:0))*(tripT>0?-1:1);
     if(kx)targetX=THREE.MathUtils.clamp(targetX+kx*dt*(9+level*0.6),-BOUND,BOUND);
     const prev=bust.position.x;
