@@ -145,7 +145,7 @@ button.ghost{background:transparent;color:var(--pompeii);box-shadow:inset 0 0 0 
   <div class="card">
     <div class="latin">AVE · CAESAR</div>
     <h1>Romeinse Muntenregen</h1>
-    <p>Vang de Romeinse munten, ontwijk alles wat naar je gegooid wordt en versla na 2½ minuut de eindbaas.</p>
+    <p>Vang de Romeinse munten, ontwijk alles wat naar je gegooid wordt en versla daarna de eindbaas.</p>
     <button id="startBtn">Spelen</button>
     <p class="hint">Pijltjes / A-D, of sleep met muis of vinger</p>
     <div class="board"><div class="board-h">TOP III</div><ol class="top3"></ol><p class="board-msg" hidden></p></div>
@@ -160,7 +160,7 @@ button.ghost{background:transparent;color:var(--pompeii);box-shadow:inset 0 0 0 
       <img class="lifeicon" id="iconGlass" src="" alt=""><span><b>Glazen flesjes</b>: zij gooit Romeinse flesjes die kapotspatten</span>
       <img class="lifeicon" id="iconPot" src="" alt=""><span><b>Potten</b>: Romeinse potten die kapotvallen. Potverdorie!</span>
       <img class="lifeicon" id="iconWhis" src="" alt=""><span><b>De fluiter</b>: zijn muzieknootjes laten alles wiebelen</span>
-      <img class="lifeicon" id="iconRene" src="" alt=""><span><b>Eindbaas Rene</b>: houd 2½ minuut vol, dan schiet je je munten op hem af!</span>
+      <img class="lifeicon" id="iconRene" src="" alt=""><span><b>Eindbaas Rene</b>: komt als iedereen geweest is. Schiet je munten op hem af!</span>
       <span class="laser"></span><span><b>Laserblik</b>: soms komt er iemand kijken. Gloeien haar ogen rood, ga dan snel opzij!</span>
     </div>
     </details>
@@ -493,7 +493,7 @@ function updateNotes(dt){
 }
 
 // end boss: Rene, made of iron, throws keys; Rasmus fires back the coins he caught
-const BOSS_AT=150,BOSS_HP=12;
+const BOSS_HP=20;
 const reneMesh=new THREE.Mesh(new THREE.PlaneGeometry(2.3*101/134,2.3),new THREE.MeshBasicMaterial({map:loadTex('imgRene'),transparent:true,alphaTest:0.05}));
 reneMesh.visible=false;scene.add(reneMesh);
 let boss=null,bossActive=false,ammo=0,coinsCaught=0,fireT=0,refillPending=false;const shots=[];
@@ -506,7 +506,7 @@ function startBoss(){
   items.splice(0).forEach(i=>scene.remove(i.obj));clearProjs();clearNotes();
   meet('rene',()=>{
     boss={phase:'in',t:0,hp:BOSS_HP,x:0,ph:0,throwT:1.6};
-    reneMesh.visible=true;ammo=Math.max(coinsCaught,25);fireT=0.6;
+    reneMesh.visible=true;ammo=Math.max(coinsCaught,30);fireT=0.6;
     $('bossHud').hidden=false;document.body.classList.add('boss-on');updateBossHud();
     if(musicWanted)Music.start('boss');showCombo('Eindbaas!');
   });
@@ -517,13 +517,13 @@ function updateBoss(dt){
   const b=boss;b.t+=dt;const ease=k=>1-Math.pow(1-Math.min(1,k),3),rest=herY+0.1;
   if(b.phase==='in'){reneMesh.position.set(b.x,rest+4.5*(1-ease(b.t/0.6)),-1.2);reneMesh.rotation.z=0;if(b.t>0.6){b.phase='fight';b.t=0;}}
   else if(b.phase==='fight'){
-    b.ph+=dt*(1.6+(BOSS_HP-b.hp)*0.07);b.x=Math.sin(b.ph)*BOUND*0.85;
+    b.ph+=dt*(2.1+(BOSS_HP-b.hp)*0.06);b.x=Math.sin(b.ph)*BOUND*0.85;
     reneMesh.position.set(b.x,rest+Math.sin(b.ph*2.3)*0.25,-1.2);reneMesh.rotation.z=-Math.cos(b.ph)*0.15;
-    b.lifeT=(b.lifeT??14)-dt;if(b.lifeT<=0){b.lifeT=16+Math.random()*6;if(lives<3){spawnLife();showCombo('Ton gooit je een leven toe!');}}
-    b.throwT-=dt;if(b.throwT<=0){b.throwT=1.3+Math.random()*0.6;launch('key',{x:b.x,y:rest-0.8});}
+    b.lifeT=(b.lifeT??14)-dt;if(b.lifeT<=0){b.lifeT=24+Math.random()*6;if(lives<3){spawnLife();showCombo('Ton gooit je een leven toe!');}}
+    b.throwT-=dt;if(b.throwT<=0){b.throwT=0.9+Math.random()*0.5;launch('key',{x:b.x,y:rest-0.8});}
     fireT-=dt;
     if(fireT<=0&&ammo>0){fireT=0.38;fire();}
-    if(ammo<=0&&!refillPending){refillPending=true;setTimeout(()=>{refillPending=false;if(!boss)return;ammo+=15;updateBossHud();showCombo('Ton gooit je nieuwe munten toe!');},1500);}
+    if(ammo<=0&&!refillPending){refillPending=true;setTimeout(()=>{refillPending=false;if(!boss)return;ammo+=10;updateBossHud();showCombo('Ton gooit je nieuwe munten toe!');},1500);}
   }
   else if(b.phase==='hit'){
     reneMesh.position.y=rest+4.5*ease(b.t/0.5);reneMesh.rotation.z+=dt*8;
@@ -585,7 +585,7 @@ const MEET={
   laser:{img:'imgHer',lines:['Doorwerken!']},
   gwain:{name:'GWAIN',img:'imgGwain',lines:['Ik ben helemaal klaar met het hout!']},
   glass:{img:'imgGlass',lines:['Zo creëer je werk!']},
-  pot:{img:'imgPot',lines:['Potverdorie... snap je hem?']},
+  pot:{img:'imgPot',lines:['Potverdorie...\nSnap je hem?']},
   whistle:{name:'JAN',img:'imgWhis',lines:['♪ Fiuuu... fiu-fiu-fiuuuu ♫']},
   rene:{name:'RENE',img:'imgRene',lines:['Ik ben van ijzer.','Mij krijg je nooit!']}
 };
@@ -896,7 +896,7 @@ function endScreen(won){
   $('overScreen').hidden=false;$('againBtn').focus();
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007200859';
+const APP_VERSION='20261007201727';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
@@ -944,7 +944,7 @@ function typePage(){
     const ch=txt[i++];tEl.textContent=txt.slice(0,i);
     if(/[a-zë♪♫]/i.test(ch)){blip();$('ton').classList.toggle('open',/[aeiouyë]/i.test(ch));$('spkImg').classList.add('talk');}
     else $('ton').classList.remove('open');
-    typeTimer=setTimeout(next,/[.!?,]/.test(ch)?260:55);
+    typeTimer=setTimeout(next,ch==='\n'?1200:/[.!?,]/.test(ch)?260:55);
   })();
 }
 function advanceIntro(){
@@ -1048,8 +1048,8 @@ function loop(){
     }
     updateWatcher(dt);updateThrower(dt);updateProjs(dt);updateWhistler(dt);updateNotes(dt);updateBoss(dt);updateShots(dt);
     if(!bossActive&&!watcher&&!thrower&&!whistler&&elapsed>=nextEvent){
-      if(elapsed>=BOSS_AT)startBoss();
-      else{const kind=eventQueue.length?eventQueue.shift():EVENT_KINDS[Math.floor(Math.random()*EVENT_KINDS.length)];nextEvent=Infinity;meet(kind,()=>startEvent(kind));}
+      if(!eventQueue.length)startBoss();
+      else{const kind=eventQueue.shift();nextEvent=Infinity;meet(kind,()=>startEvent(kind));}
     }
   } else {
     bust.position.x*=0.95;
