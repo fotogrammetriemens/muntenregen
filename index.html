@@ -482,7 +482,7 @@ function gameOver(){
   tone(220,0.6,'triangle',0.15,0.5);
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007175623';
+const APP_VERSION='20261007190125';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
@@ -593,7 +593,7 @@ function loop(){
 const SUPABASE_URL='__SB_URL__';
 const SUPABASE_KEY='__SB_KEY__';
 // or a Google Sheet via an Apps Script web app (doGet -> {top}, doPost {name,score})
-const SHEET_URL='__SHEET_URL__';
+const SHEET_URL='https://script.google.com/macros/s/AKfycbwxdEOjhZhJLSxpXcOvC51hO21NN2X050fNmo7HDLh1ULKyS1dhS3A-9IK4RRLVCw3H/exec';
 const sheetRemote=SHEET_URL.startsWith('https://script.google.com/')?{
   async top(){
     const r=await fetch(SHEET_URL+'?t='+Date.now());
