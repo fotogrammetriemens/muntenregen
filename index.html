@@ -572,7 +572,7 @@ function scheduleNext(){nextEvent=elapsed+15+Math.random()*7;}
 function startEvent(kind){if(kind==='laser')startLaser();else if(kind==='whistle')startWhistle();else startThrower(kind);}
 function imgURL(id){return 'data:image/webp;base64,'+$(id).textContent.trim();}
 const MEET={
-  laser:{img:'imgHer',lines:['Doorwerken! Rasmus, dat staat in je mail!','Alé manneke!']},
+  laser:{img:'imgHer',lines:['Doorwerken!']},
   gwain:{name:'GWAIN',img:'imgGwain',lines:['Ik ben helemaal klaar met het hout!']},
   glass:{img:'imgGlass',lines:['Zo creëer je werk!']},
   pot:{img:'imgPot',lines:['Potverdorie!']},
@@ -886,7 +886,7 @@ function endScreen(won){
   $('overScreen').hidden=false;$('againBtn').focus();
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007200256';
+const APP_VERSION='20261007200404';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
