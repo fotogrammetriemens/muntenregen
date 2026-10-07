@@ -585,7 +585,7 @@ const MEET={
   laser:{img:'imgHer',lines:['Doorwerken!']},
   gwain:{name:'GWAIN',img:'imgGwain',lines:['Ik ben helemaal klaar met het hout!']},
   glass:{img:'imgGlass',lines:['Zo creëer je werk!']},
-  pot:{img:'imgPot',lines:['Potverdorie!']},
+  pot:{img:'imgPot',lines:['Potverdorie... snap je hem?']},
   whistle:{name:'JAN',img:'imgWhis',lines:['♪ Fiuuu... fiu-fiu-fiuuuu ♫']},
   rene:{name:'RENE',img:'imgRene',lines:['Ik ben van ijzer.','Mij krijg je nooit!']}
 };
@@ -896,7 +896,7 @@ function endScreen(won){
   $('overScreen').hidden=false;$('againBtn').focus();
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007200615';
+const APP_VERSION='20261007200859';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
