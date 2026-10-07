@@ -482,7 +482,7 @@ function gameOver(){
   tone(220,0.6,'triangle',0.15,0.5);
 }
 // auto-update: compare with version.json next to the page and reload into the new build
-const APP_VERSION='20261007174934';
+const APP_VERSION='20261007175623';
 let pendingUpdate=null;
 function applyUpdate(){location.replace(location.pathname+'?v='+encodeURIComponent(pendingUpdate));}
 async function checkUpdate(){
@@ -592,7 +592,21 @@ function loop(){
 // online leaderboard (Supabase): fill in the project URL and the public anon key
 const SUPABASE_URL='__SB_URL__';
 const SUPABASE_KEY='__SB_KEY__';
-const remote=(SUPABASE_URL.startsWith('https://')&&SUPABASE_KEY.length>20)?{
+// or a Google Sheet via an Apps Script web app (doGet -> {top}, doPost {name,score})
+const SHEET_URL='__SHEET_URL__';
+const sheetRemote=SHEET_URL.startsWith('https://script.google.com/')?{
+  async top(){
+    const r=await fetch(SHEET_URL+'?t='+Date.now());
+    if(!r.ok)throw new Error('http '+r.status);
+    const j=await r.json();return Array.isArray(j.top)?j.top.slice(0,3):[];
+  },
+  async save(name,sc){
+    const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({name,score:sc})});
+    if(!r.ok)throw new Error('http '+r.status);
+    const j=await r.json();if(!j.ok)throw new Error(j.error||'refused');
+  }
+}:null;
+const remote=sheetRemote||((SUPABASE_URL.startsWith('https://')&&SUPABASE_KEY.length>20)?{
   h:{apikey:SUPABASE_KEY},
   async top(){
     const r=await fetch(SUPABASE_URL+'/rest/v1/scores?select=name,score&order=score.desc&limit=40',{headers:this.h});
@@ -605,7 +619,7 @@ const remote=(SUPABASE_URL.startsWith('https://')&&SUPABASE_KEY.length>20)?{
     const r=await fetch(SUPABASE_URL+'/rest/v1/scores',{method:'POST',headers:{...this.h,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({name,score:sc})});
     if(!r.ok)throw new Error('http '+r.status);
   }
-}:null;
+}:null);
 let remoteOk=false;
 async function refreshRemote(){
   try{top=await remote.top();remoteOk=true;boardState='ready';}
